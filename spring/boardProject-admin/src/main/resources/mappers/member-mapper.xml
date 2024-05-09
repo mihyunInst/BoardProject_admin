@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="edu.kh.admin.main.model.mapper.AdminMapper">
+
+	 <!-- 로그인 -->
+	 <select id="login" >
+	 	SELECT MEMBER_NO, MEMBER_EMAIL, MEMBER_NICKNAME, MEMBER_PW, AUTHORITY
+		FROM "MEMBER"
+		WHERE MEMBER_EMAIL = #{memberEmail}
+		AND MEMBER_DEL_FL = 'N'
+		AND AUTHORITY = 2
+	 </select>
+	 
+	 <!-- 탈퇴 회원 조회 -->
+	<select id="selectWithdrawnMemberList">
+		SELECT MEMBER_NO, MEMBER_EMAIL, MEMBER_NICKNAME
+		FROM "MEMBER"
+		WHERE MEMBER_DEL_FL = 'Y'
+	</select>
+	
+	<!-- 탈퇴 회원 복구 -->
+	<update id="restoreMember">
+		UPDATE "MEMBER" SET
+		MEMBER_DEL_FL = 'N'
+		WHERE MEMBER_NO = #{memberNo}
+	</update>
+	
+	<!-- 삭제된 게시글 목록 조회 -->
+	<select id="selectDeleteBoardList">
+		SELECT BOARD_NO, BOARD_TITLE, BOARD_DEL_FL, 
+		BOARD_NAME, MEMBER_NICKNAME
+		FROM "BOARD"
+		JOIN "MEMBER" USING(MEMBER_NO)
+		JOIN "BOARD_TYPE" USING(BOARD_CODE)
+		WHERE BOARD_DEL_FL = 'Y'
+	</select>
+	
+	<!-- 삭제 게시글 복구 -->
+	<update id="restoreBoard">
+		UPDATE "BOARD" SET
+		BOARD_DEL_FL = 'N'
+		WHERE BOARD_NO = #{boardNo}
+	</update>
+	
+	<!--  게시글 최대 조회수 -->
+	<select id="maxReadCount">
+		SELECT READ_COUNT, BOARD_NO, BOARD_TITLE, MEMBER_NICKNAME
+		FROM "BOARD"
+		JOIN "MEMBER" USING(MEMBER_NO)
+		WHERE READ_COUNT = (SELECT MAX(READ_COUNT) FROM "BOARD")
+	</select>
+	
+	<!-- 게시글 최대 좋아요 수 -->
+	<select id="maxLikeCount">
+		SELECT BOARD_NO, LIKE_COUNT, BOARD_TITLE, MEMBER_NICKNAME 
+		FROM (
+		    SELECT BOARD_NO, COUNT(*) AS LIKE_COUNT
+		    FROM BOARD_LIKE
+		    GROUP BY BOARD_NO
+		    ORDER BY LIKE_COUNT DESC
+		)
+		JOIN "BOARD" USING(BOARD_NO)
+		JOIN "MEMBER" USING(MEMBER_NO)
+		WHERE ROWNUM = 1
+	</select>
+	
+	<!-- 게시글 최대 댓글 수 -->
+	<select id="maxCommentCount">
+		SELECT BOARD_NO, COMMENT_COUNT, BOARD_TITLE, MEMBER_NICKNAME 
+		FROM (
+		SELECT BOARD_NO, COUNT(*) AS COMMENT_COUNT
+		    FROM "COMMENT"
+		    GROUP BY BOARD_NO
+		    ORDER BY COMMENT_COUNT DESC
+		)
+		JOIN "BOARD" USING(BOARD_NO)
+		JOIN "MEMBER" USING(MEMBER_NO)
+		WHERE ROWNUM = 1
+	</select>
+	
+	<!-- 관리자 계정 발급 -->
+	<insert id="adminSignUp">
+		INSERT INTO "MEMBER" VALUES(
+			SEQ_MEMBER_NO.NEXTVAL,
+			#{memberEmail},
+			#{memberPw},
+			#{memberNickname},
+			#{memberTel},
+			NULL,
+			NULL,
+			DEFAULT,
+			'N',
+			2
+		)
+	</insert>
+	
+	<!-- 관리자 계정 목록 -->
+	<select id="adminAccountList">
+		SELECT MEMBER_NO, MEMBER_EMAIL, MEMBER_NICKNAME
+		FROM "MEMBER"
+		WHERE AUTHORITY = 2
+	</select>
+	
+	
+	
+	
+</mapper>
